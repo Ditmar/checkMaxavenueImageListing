@@ -1679,6 +1679,9 @@ ids = ["57f80c169067eb001b043e77",
 "590106e2133a810ab300f235"]
 client = MongoClient('mongodb://localhost:27017')
 db = client.max_api
+list = db.listings
+c = 0
 for i in ids:
-	print "Borrando"
-	list = db.listings.remove({"_id": ObjectId(i)})
+	print "%s Deleted "%(c)
+	c += 1
+	list.remove({"_id": ObjectId(i)})
