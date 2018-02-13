@@ -44,16 +44,21 @@ class CleanMongDb():
 	def checkDuplicatesAndDelete(self, min_data, max_data):
 		self.logger.info("Start To Process from  %s to %s "%(min_data, max_data))
 		list = self.db.listings
-		querylist = list.find({'listingId':{'$regex':'\d'}})[min_data:max_data]
+		querylist = list.find({'google_lat':{'$exists':True}})[min_data:max_data]
 		data = []
 		for i in querylist:
-			data.append({'mlsId':i['mlsId'], 'created_at': i['created_at'], 'listingId': i['listingId']})
+			try:
+				data.append({'mlsId':i['mlsId'], 'created_at': i['created_at'], 'listingId': i['listingId'], 'full':i['full'], 'google_lat': i['google_lat'], 'google_lng':i['google_lng']})
+			except KeyError:
+				print("ERROR")
 		total = float(len(data))
 		avanced = float(0)
 		for item in data:
-			listing_Id = item['listingId']
+			listing_Id = item['full']
+			lat = item['google_lat']
+			lng = item['google_lng']
 			#listing_Id = item[]
-			result = list.find({"listingId": listing_Id})
+			result = list.find({"full": listing_Id, 'google_lng':lng,'google_lat':lat})
 			porcentaje = ((avanced) / (total) * 100)
 			avanced = avanced + 1
 			print("Cheking list  "+ str(avanced) + " Advanced " + str(porcentaje) + "%")
@@ -75,7 +80,6 @@ class CleanMongDb():
 						full = "none"
 					self.logger.info("* Remove " + str(ids["_id"]) + " MlsId = "+ ids["mlsId"] + " listingId = " + ids["listingId"] + " created = " + str(ids["created_at"]) + " full = " + full + '\n')
 					list.remove({"_id" : ids["_id"]})
-		log.close()
 		del data[:]
 		self.client.close()
 class App():
