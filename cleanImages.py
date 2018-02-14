@@ -9,7 +9,6 @@ import logging
 import time
 import re
 from daemon import runner
-
 class CleanMongDb():
 	def __init__(self, logger):
 		self.logger = logger
@@ -29,36 +28,37 @@ class CleanMongDb():
 			mlsid = item['mlsId']
 			photo = item['primary_photo']
 			porcentaje = int((float(c) / float(total)) * 100)
-			print porcentaje + "%"
+			print (str(porcentaje) + "%")
 			try:
 				file = cStringIO.StringIO(urllib.urlopen(str(photo)).read())
 				img = Image.open(file)
 				print ('Correct !' )
 				self.logger.info(str(int(c+min_data)) + ') Correct: MLSID =' + mlsid + 'date'+ str(item['modified']) +'\n')
 			except IOError:
-				print ('======================================> ERROR !' ) 
+				print ('======================================> ERROR !' )
 				self.logger.info(str(int(c+min_data)) + ') Error: MLSID =' + mlsid + ' date'+ str(item['modified']) +'\n')
 			c = 1 + c
 		print('=========> Finish <=============')
 		self.client.close()
 	def checkDuplicatesAndDelete(self, min_data, max_data):
-		self.logger.info("Start To Process from  %s to %s "%(min_data, max_data))
+		self.logger.info("Start To Process from  %s to %s " %(min_data, max_data))
 		list = self.db.listings
-		querylist = list.find({'google_lat':{'$exists':True}})[min_data:max_data]
+		querylist = list.find({'google_lat':{'$exists':True}})[ min_data : max_data]
 		data = []
 		for i in querylist:
 			try:
-				data.append({'mlsId':i['mlsId'], 'created_at': i['created_at'], 'listingId': i['listingId'], 'full':i['full'], 'google_lat': i['google_lat'], 'google_lng':i['google_lng']})
+				data.append({'state':i['state'], 'mlsId':i['mlsId'], 'created_at': i['created_at'], 'listingId': i['listingId'], 'full':i['full'], 'postalcode':i["postalcode"]})
 			except KeyError:
-				print("ERROR")
+				print(" ERROR in " + i['mlsId'])
 		total = float(len(data))
 		avanced = float(0)
 		for item in data:
-			listing_Id = item['full']
-			lat = item['google_lat']
-			lng = item['google_lng']
+			full = item['full']
+			postalcode = item['postalcode']
+
+			state = item['state']
 			#listing_Id = item[]
-			result = list.find({"full": listing_Id, 'google_lng':lng,'google_lat':lat})
+			result = list.find({"full": full, 'postalcode': postalcode, 'state': state})
 			porcentaje = ((avanced) / (total) * 100)
 			avanced = avanced + 1
 			print("Cheking list  "+ str(avanced) + " Advanced " + str(porcentaje) + "%")
@@ -87,13 +87,13 @@ class App():
       self.stdin_path      = '/dev/null'
       self.stdout_path     = '/dev/tty'
       self.stderr_path     = '/dev/tty'
-      self.pidfile_path    =  '/var/run/test.pid'
+      self.pidfile_path    =  '/var/run/clean.pid'
       self.pidfile_timeout = 5
    def run(self):
       process = CleanMongDb(logger)
       process.checkDuplicatesAndDelete(0,150000)
       while True:
-         time.sleep(259200)
+         time.sleep(1000)
 if __name__ == '__main__':
    app = App()
    logger = logging.getLogger("testlog")
